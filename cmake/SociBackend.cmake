@@ -108,7 +108,7 @@ macro(soci_backend NAME)
       get_directory_property(THIS_INCLUDE_DIRS INCLUDE_DIRECTORIES)
       get_directory_property(THIS_COMPILE_DEFS COMPILE_DEFINITIONS)
 
-      # Backend-specific depedencies
+      # Backend-specific dependencies
       set(THIS_BACKEND_DEPENDS_INCLUDE_DIRS ${${NAMEU}_DEPS_INCLUDE_DIRS})
       set(THIS_BACKEND_DEPENDS_LIBRARIES ${${NAMEU}_DEPS_LIBRARIES})
       set(THIS_BACKEND_DEPENDS_DEFS ${${NAMEU}_DEPS_DEFS})

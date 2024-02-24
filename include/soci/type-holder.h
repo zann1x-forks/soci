@@ -105,13 +105,23 @@ struct soci_cast<T, U,
   static inline T cast(U val) { return val; }
 };
 
-// Type safe conversion that is widening
+// template <typename T, typename U>
+// struct soci_cast<
+//     T, U,
+//     typename std::enable_if<(
+//             std::numeric_limits<T>::is_specialized &&
+//             std::numeric_limits<U>::is_specialized
+//             )>::type> {
+//   static inline T cast(U val) { return static_cast<T>(val); }
+// };
+
+// // Type safe conversion that is widening
 template <typename T, typename U>
 struct soci_cast<
     T, U,
     typename std::enable_if<(
-        (!std::is_same<T, U>::value) && std::is_integral<T>::value &&
-        std::is_integral<U>::value &&
+        !std::is_same<T, U>::value &&
+        std::is_integral<T>::value && std::is_integral<U>::value &&
         (uintmax_t)(std::numeric_limits<T>::max)() >=
             (uintmax_t)(std::numeric_limits<U>::max)() &&
         (intmax_t)(std::numeric_limits<T>::min)() <=
@@ -120,70 +130,70 @@ struct soci_cast<
 };
 
 // Type safe integral conversion that can narrow the min side
-template <typename T, typename U>
-struct soci_cast<
-    T, U,
-    typename std::enable_if<(
-        std::is_integral<T>::value && std::is_integral<U>::value &&
-        (uintmax_t)(std::numeric_limits<T>::max)() >=
-            (uintmax_t)(std::numeric_limits<U>::max)() &&
-        (intmax_t)(std::numeric_limits<T>::min)() >
-            (intmax_t)(std::numeric_limits<U>::min)())>::type> {
-  static inline T cast(U val) {
-    if ((intmax_t)(std::numeric_limits<T>::min)() > (intmax_t)val)
-      throw type_holder_bad_cast("narrowing cast on the min side");
-    return static_cast<T>(val);
-  }
-};
+// template <typename T, typename U>
+// struct soci_cast<
+//     T, U,
+//     typename std::enable_if<(
+//         (!std::is_same<T, U>::value) &&
+//         std::is_integral<T>::value && std::is_integral<U>::value &&
+//         (uintmax_t)(std::numeric_limits<T>::max)() >=
+//             (uintmax_t)(std::numeric_limits<U>::max)() &&
+//         (intmax_t)(std::numeric_limits<T>::min)() >
+//             (intmax_t)(std::numeric_limits<U>::min)())>::type> {
+//   static inline T cast(U val) {
+//     if ((intmax_t)(std::numeric_limits<T>::min)() > (intmax_t)val)
+//       throw type_holder_bad_cast("narrowing cast on the min side");
+//     return static_cast<T>(val);
+//   }
+// };
+//
+// // Type safe integral conversion that can narrow the max side
+// template <typename T, typename U>
+// struct soci_cast<
+//     T, U,
+//     typename std::enable_if<(
+//         std::is_integral<T>::value && std::is_integral<U>::value &&
+//         (uintmax_t)(std::numeric_limits<T>::max)() <
+//             (uintmax_t)(std::numeric_limits<U>::max)() &&
+//         (intmax_t)(std::numeric_limits<T>::min)() <=
+//             (intmax_t)(std::numeric_limits<U>::min)())>::type> {
+//   static inline T cast(U val) {
+//     if ((uintmax_t)(std::numeric_limits<T>::max)() < (uintmax_t)val)
+//       throw type_holder_bad_cast("narrowing cast on the max side");
+//     return static_cast<T>(val);
+//   }
+// };
+//
+// // Type safe integral conversion that can narrow on both sides
+// template <typename T, typename U>
+// struct soci_cast<
+//     T, U,
+//     typename std::enable_if<(
+//         std::is_integral<T>::value && std::is_integral<U>::value &&
+//         (uintmax_t)(std::numeric_limits<T>::max)() <
+//             (uintmax_t)(std::numeric_limits<U>::max)() &&
+//         (intmax_t)(std::numeric_limits<T>::min)() >
+//             (intmax_t)(std::numeric_limits<U>::min)())>::type> {
+//   static inline T cast(U val) {
+//     T ret = static_cast<T>(val);
+//     if (static_cast<U>(ret) != val)
+//       throw type_holder_bad_cast("narrowing cast on the min or max side");
+//     return ret;
+//   }
+// };
 
-// Type safe integral conversion that can narrow the max side
+// Type safe conversion involving at least floating-point values
 template <typename T, typename U>
 struct soci_cast<
     T, U,
-    typename std::enable_if<(
-        std::is_integral<T>::value && std::is_integral<U>::value &&
-        (uintmax_t)(std::numeric_limits<T>::max)() <
-            (uintmax_t)(std::numeric_limits<U>::max)() &&
-        (intmax_t)(std::numeric_limits<T>::min)() <=
-            (intmax_t)(std::numeric_limits<U>::min)())>::type> {
-  static inline T cast(U val) {
-    if ((uintmax_t)(std::numeric_limits<T>::max)() < (uintmax_t)val)
-      throw type_holder_bad_cast("narrowing cast on the max side");
-    return static_cast<T>(val);
-  }
-};
-
-// Type safe integral conversion that can narrow on both sides
-template <typename T, typename U>
-struct soci_cast<
-    T, U,
-    typename std::enable_if<(
-        std::is_integral<T>::value && std::is_integral<U>::value &&
-        (uintmax_t)(std::numeric_limits<T>::max)() <
-            (uintmax_t)(std::numeric_limits<U>::max)() &&
-        (intmax_t)(std::numeric_limits<T>::min)() >
-            (intmax_t)(std::numeric_limits<U>::min)())>::type> {
-  static inline T cast(U val) {
-    T ret = static_cast<T>(val);
-    if (static_cast<U>(ret) != val)
-      throw type_holder_bad_cast("narrowing cast on the min or max side");
-    return ret;
-  }
-};
-
-// Type safe conversion involving at least one floating-point value
-template <typename T, typename U>
-struct soci_cast<
-    T, U,
-    typename std::enable_if<!std::is_same<T, U>::value &&
-                            (std::is_floating_point<T>::value ||
-                             std::is_floating_point<U>::value)>::type> {
-  static inline T cast(U val) {
-    T ret = static_cast<T>(val);
-    if (static_cast<U>(ret) != val)
-      throw type_holder_bad_cast("cast lost floating precision");
-    return ret;
-  }
+    typename std::enable_if<(!std::is_same<T, U>::value &&
+                            std::is_floating_point<T>::value &&
+                            std::is_floating_point<U>::value &&
+                            (double)(std::numeric_limits<T>::max)() >=
+                                (double)(std::numeric_limits<U>::max)() &&
+                            (double)(std::numeric_limits<T>::min)() <=
+                                (double)(std::numeric_limits<U>::min)())>::type> {
+  static inline T cast(U val) { return static_cast<T>(val); }
 };
 
 namespace details {

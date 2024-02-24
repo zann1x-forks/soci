@@ -181,20 +181,20 @@ struct soci_cast<
 //     return ret;
 //   }
 // };
-
-// Type safe conversion involving at least floating-point values
-template <typename T, typename U>
-struct soci_cast<
-    T, U,
-    typename std::enable_if<(!std::is_same<T, U>::value &&
-                            std::is_floating_point<T>::value &&
-                            std::is_floating_point<U>::value &&
-                            (double)(std::numeric_limits<T>::max)() >=
-                                (double)(std::numeric_limits<U>::max)() &&
-                            (double)(std::numeric_limits<T>::min)() <=
-                                (double)(std::numeric_limits<U>::min)())>::type> {
-  static inline T cast(U val) { return static_cast<T>(val); }
-};
+//
+// // Type safe conversion involving floating-point values
+// template <typename T, typename U>
+// struct soci_cast<
+//     T, U,
+//     typename std::enable_if<(!std::is_same<T, U>::value &&
+//                             std::is_floating_point<T>::value &&
+//                             std::is_floating_point<U>::value &&
+//                             (double)(std::numeric_limits<T>::max)() >=
+//                                 (double)(std::numeric_limits<U>::max)() &&
+//                             (double)(std::numeric_limits<T>::min)() <=
+//                                 (double)(std::numeric_limits<U>::min)())>::type> {
+//   static inline T cast(U val) { return static_cast<T>(val); }
+// };
 
 namespace details {
 // Returns U* as T*, if the dynamic type of the pointer is really T.
@@ -224,7 +224,8 @@ template <typename T, typename U> T *checked_ptr_cast(U *ptr) {
 union SOCI_DECL type_holder {
   type_holder(){};
   ~type_holder() {}
-  std::string s;
+
+  std::string *s;
   int8_t i8;
   int16_t i16;
   int32_t i32;
@@ -234,7 +235,7 @@ union SOCI_DECL type_holder {
   uint32_t ui32;
   uint64_t ui64;
   double d;
-  std::tm t = {};
+  std::tm *t = {};
 };
 
 class SOCI_DECL holder {
@@ -245,9 +246,9 @@ public:
   template <typename T> constexpr T get() const {
     switch (dt) {
     case soci::db_string:
-      return soci_cast<T, std::string>::cast(val.s);
+      return soci_cast<T, std::string>::cast(*val.s);
     case soci::db_date:
-      return soci_cast<T, std::tm>::cast(val.t);
+      return soci_cast<T, std::tm>::cast(*val.t);
     case soci::db_double:
       return soci_cast<T, double>::cast(val.d);
     case soci::db_int8:
@@ -267,9 +268,9 @@ public:
     case soci::db_uint64:
       return soci_cast<T, uint64_t>::cast(val.ui64);
     case soci::db_blob:
-      return soci_cast<T, std::string>::cast(val.s);
+      return soci_cast<T, std::string>::cast(*val.s);
     case soci::db_xml:
-      return soci_cast<T, std::string>::cast(val.s);
+      return soci_cast<T, std::string>::cast(*val.s);
     default:
       throw type_holder_bad_cast(dt, typeid(T));
     }
@@ -292,7 +293,7 @@ template <typename T> struct type_holder_raw_get {
 
 template <> struct type_holder_raw_get<std::string> {
   static const db_type type = soci::db_string;
-  static inline std::string *get(type_holder &val) { return &val.s; }
+  static inline std::string *get(type_holder &val) { return val.s; }
 };
 
 template <> struct type_holder_raw_get<int8_t> {
@@ -374,7 +375,7 @@ template <> struct type_holder_raw_get<double> {
 
 template <> struct type_holder_raw_get<std::tm> {
   static const db_type type = soci::db_date;
-  static inline std::tm *get(type_holder &val) { return &val.t; }
+  static inline std::tm *get(type_holder &val) { return val.t; }
 };
 
 template <typename T> holder *holder::make_holder(T *&val) {

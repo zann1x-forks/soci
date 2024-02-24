@@ -138,7 +138,7 @@ private:
     template<typename T>
     void into_row()
     {
-        T* t = new T();
+        T* t = nullptr;
         indicator * ind = new indicator(i_ok);
         row_->add_holder<T>(t, ind);
         exchange_for_row(into(*t, *ind));

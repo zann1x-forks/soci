@@ -715,6 +715,7 @@ TEST_CASE("MySQL tinyint", "[mysql][int][tinyint]")
     CHECK(r.get_properties("val").get_data_type() == dt_integer);
     CHECK(r.get_properties("val").get_db_type() == db_int8);
     CHECK(r.get<int8_t>("val") == -123);
+    CHECK(r.get<int>("val") == -123);
   }
   {
     soci::session sql(backEnd, connectString);
@@ -726,6 +727,7 @@ TEST_CASE("MySQL tinyint", "[mysql][int][tinyint]")
     CHECK(r.get_properties("val").get_data_type() == dt_integer);
     CHECK(r.get_properties("val").get_db_type() == db_uint8);
     CHECK(r.get<uint8_t>("val") == 123);
+    CHECK(r.get<int>("val") == 123);
   }
   {
     soci::session sql(backEnd, connectString);

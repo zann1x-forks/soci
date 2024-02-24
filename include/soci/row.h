@@ -61,12 +61,10 @@ public:
     indicator get_indicator(std::string const& name) const;
 
     template <typename T>
-    inline T* add_holder(indicator* ind)
+    inline void add_holder(T* t, indicator* ind)
     {
-        T* val = nullptr;
-        holders_.push_back(details::holder::make_holder(val));
+        holders_.push_back(details::holder::make_holder(t));
         indicators_.push_back(ind);
-        return val;
     }
 
     column_properties const& get_properties(std::size_t pos) const;
